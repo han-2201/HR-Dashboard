@@ -214,15 +214,24 @@ if page == "Executive Dashboard":
     pct_thu_viec = int((thu_viec / total_emp) * 100) if total_emp > 0 else 0
     pct_ctv = int((ctv / total_emp) * 100) if total_emp > 0 else 0
 
+    # --- ĐÃ SỬA LỖI: Lấy TẤT CẢ phòng ban và chia đều 2 cột ---
     dept_html_col1, dept_html_col2 = "", ""
     if 'Phòng ban' in df_active.columns:
-        dept_counts = df_active['Phòng ban'].value_counts().head(6)
+        dept_counts = df_active['Phòng ban'].value_counts() # Đã xóa .head(6)
         colors = ['bg-primary', 'bg-secondary', 'bg-primary-container', 'bg-outline-variant', 'bg-surface-variant', 'bg-surface-container-high']
+        
+        # Thuật toán chia đều số lượng phòng ban ra 2 cột
+        half_point = (len(dept_counts) + 1) // 2 
+        
         for i, (dept, count) in enumerate(dept_counts.items()):
             pct = int((count / total_emp) * 100) if total_emp > 0 else 0
-            block = f'<div class="space-y-1 mb-4"><div class="flex justify-between text-sm font-medium"><span>{dept}</span><span class="font-bold">{count}</span></div><div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="h-full {colors[i%6]}" style="width: {pct}%"></div></div></div>'
-            if i < 3: dept_html_col1 += block
-            else: dept_html_col2 += block
+            color = colors[i % 6]
+            block = f'<div class="space-y-1 mb-4"><div class="flex justify-between text-sm font-medium"><span class="truncate w-3/4" title="{dept}">{dept}</span><span class="font-bold">{count}</span></div><div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="h-full {color}" style="width: {pct}%"></div></div></div>'
+            
+            if i < half_point: 
+                dept_html_col1 += block
+            else: 
+                dept_html_col2 += block
 
     html_p1 = f"""
     <!DOCTYPE html><html lang="vi"><head>{TAILWIND_HEAD}</head><body class="p-4 md:p-8 animate-fade-in">
@@ -240,10 +249,15 @@ if page == "Executive Dashboard":
             <div class="bg-white border border-outline-variant rounded-xl p-6 text-center shadow-sm hover-card"><span class="material-symbols-outlined text-orange-600 text-3xl mb-2">timer</span><h4 class="font-semibold mb-2">Thử việc</h4><p class="text-3xl font-bold">{pct_thu_viec}%</p><p class="text-xs text-on-surface-variant mt-1">{thu_viec} NV</p></div>
             <div class="bg-white border border-outline-variant rounded-xl p-6 text-center shadow-sm hover-card"><span class="material-symbols-outlined text-gray-500 text-3xl mb-2">handshake</span><h4 class="font-semibold mb-2">CTV</h4><p class="text-3xl font-bold">{pct_ctv}%</p><p class="text-xs text-on-surface-variant mt-1">{ctv} NV</p></div>
         </div>
-        <h3 class="text-lg font-bold mb-6">Phân bổ theo Phòng ban</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-8 overflow-y-auto custom-scrollbar pr-2" style="max-height: 250px;"><div>{dept_html_col1}</div><div>{dept_html_col2}</div></div></div>
+       <div class="bg-white border border-outline-variant rounded-xl p-6 shadow-sm delay-3 animate-fade-in">
+            <h3 class="text-lg font-bold mb-6">Phân bổ theo Phòng ban</h3>
+            <div class="overflow-y-auto custom-scrollbar pr-2" style="max-height: 260px;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div>{dept_html_col1}</div><div>{dept_html_col2}</div></div>
+            </div>
+        </div>
     </body></html>
     """
-    components.html(html_p1, height=1150, scrolling=True)
+    components.html(html_p1, height=1100, scrolling=True)
 
 # ==========================================
 # TRANG 2: WORKFORCE ANALYTICS
