@@ -7,7 +7,7 @@ import datetime
 import re
 
 # ==========================================
-# 1. CẤU HÌNH TRANG & BIẾN TOÀN CỤC
+# 1. CẤU HÌNH TRANG & CSS DÙNG CHUNG
 # ==========================================
 LOGO_URL = "https://cdn-icons-png.flaticon.com/512/3135/3135679.png"
 st.set_page_config(page_title="Enterprise HR Analytics", page_icon=LOGO_URL, layout="wide", initial_sidebar_state="expanded")
@@ -80,9 +80,14 @@ def get_tinh(address):
 @st.cache_data
 def load_data():
     df = pd.read_excel('DataNhansuFinal.xlsx')
-    if 'Phòng ban' in df.columns: df['Phòng ban'] = df['Phòng ban'].str.replace('TecHà Nộiology', 'Technology', case=False, regex=False)
+    
+    # Sửa lỗi Tên phòng ban
+    if 'Phòng ban' in df.columns: 
+        df['Phòng ban'] = df['Phòng ban'].str.replace('TecHà Nộiology', 'Technology', case=False, regex=False)
+        
     df.columns = df.columns.str.replace('\n', ' ', regex=True).str.strip()
-    if 'Thâm niên 1' not in df.columns and 'Thâm niên' in df.columns: df.rename(columns={'Thâm niên': 'Thâm niên 1'}, inplace=True)
+    if 'Thâm niên 1' not in df.columns and 'Thâm niên' in df.columns: 
+        df.rename(columns={'Thâm niên': 'Thâm niên 1'}, inplace=True)
         
     for col in ['Tuổi', 'Thâm niên 1']:
         if col in df.columns: df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -97,7 +102,8 @@ def load_data():
     if 'Ngày làm việc cuối cùng' in df.columns:
         df['Năm nghỉ'] = df['Ngày làm việc cuối cùng'].dt.year
         df['Tháng nghỉ'] = df['Ngày làm việc cuối cùng'].dt.month
-    if 'Ngày sinh' in df.columns: df['Tháng sinh'] = df['Ngày sinh'].dt.month
+    if 'Ngày sinh' in df.columns: 
+        df['Tháng sinh'] = df['Ngày sinh'].dt.month
     
     if 'Thâm niên 1' in df.columns: df['Nhóm thâm niên'] = pd.cut(df['Thâm niên 1'], bins=[-1, 0.5, 1, 3, 5, 10, 100], labels=['<6m', '6-12m', '1-3y', '3-5y', '5-10y', '>10y']).astype(object)
     if 'Tuổi' in df.columns: df['Nhóm tuổi'] = pd.cut(df['Tuổi'], bins=[0, 24, 30, 35, 40, 100], labels=['<25', '25-30', '31-35', '36-40', '>40']).astype(object)
@@ -110,8 +116,12 @@ def load_data():
 
 df = load_data()
 
+# --- XÓA SẠCH DẤU VẾT CỦA PN-000 ---
+if 'MSNV' in df.columns:
+    df = df[df['MSNV'].astype(str).str.strip().str.upper() != 'PN-000'].copy()
+
 # ==========================================
-# 3. SIDEBAR & LỌC TOÀN CỤC
+# 3. SIDEBAR & LỌC ĐỘNG TOÀN CỤC
 # ==========================================
 with st.sidebar:
     st.markdown("## 🏢 Enterprise HR")
@@ -136,7 +146,12 @@ with st.sidebar:
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("""<style>div[data-testid="stButton"] button {background-color: #0045d3; color: white; width: 100%; border-radius: 8px; border: none; font-weight: 600; padding: 10px 0;} div[data-testid="stButton"] button:hover { background-color: #3260ec; color: white; }</style>""", unsafe_allow_html=True)
     if st.button("Xuất Báo Cáo", use_container_width=True): st.success("✅ Đã xuất báo cáo!")
-    st.markdown("""<style>.sb-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-family: 'Inter', sans-serif; font-size: 14px; color: #434655; font-weight: 500;} .sb-item:hover { background-color: #f5f3f4; color: #1b1c1d; } .sb-icon { font-size: 20px; } .sb-logout { color: #ba1a1a; margin-top: 4px;} .sb-logout:hover { background-color: #ffe4e6; color: #93000a; } .sb-divider { border-top: 1px solid #e2e8f0; margin: 15px 0 10px 0; }</style><div class="sb-divider"></div><div class="sb-item"><span class="material-symbols-outlined sb-icon">settings</span><span>Cài đặt (Settings)</span></div><div class="sb-item sb-logout"><span class="material-symbols-outlined sb-icon">logout</span><span>Đăng xuất</span></div>""", unsafe_allow_html=True)
+    
+    sidebar_footer = """
+    <style>.sb-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-family: 'Inter', sans-serif; font-size: 14px; color: #434655; font-weight: 500;} .sb-item:hover { background-color: #f5f3f4; color: #1b1c1d; } .sb-icon { font-size: 20px; } .sb-logout { color: #ba1a1a; margin-top: 4px;} .sb-logout:hover { background-color: #ffe4e6; color: #93000a; } .sb-divider { border-top: 1px solid #e2e8f0; margin: 15px 0 10px 0; }</style>
+    <div class="sb-divider"></div><div class="sb-item"><span class="material-symbols-outlined sb-icon">settings</span><span>Cài đặt (Settings)</span></div><div class="sb-item sb-logout"><span class="material-symbols-outlined sb-icon">logout</span><span>Đăng xuất</span></div>
+    """
+    st.markdown(sidebar_footer, unsafe_allow_html=True)
 
 # ==========================================
 # 4. TÍNH TOÁN CÁC BIẾN TOÀN CỤC CHỐNG LỖI
@@ -183,6 +198,11 @@ avg_age = round(age_mean, 1) if pd.notna(age_mean) else 0
 sen_mean = pd.to_numeric(df_active['Thâm niên 1'], errors='coerce').mean() if 'Thâm niên 1' in df_active.columns else 0
 avg_seniority = round(sen_mean, 1) if pd.notna(sen_mean) else 0
 
+def get_dynamic_font(text):
+    if len(str(text)) <= 15: return "text-3xl"
+    elif len(str(text)) <= 25: return "text-2xl"
+    else: return "text-xl"
+
 
 # ==========================================
 # TRANG 1: EXECUTIVE DASHBOARD
@@ -214,19 +234,14 @@ if page == "Executive Dashboard":
     pct_thu_viec = int((thu_viec / total_emp) * 100) if total_emp > 0 else 0
     pct_ctv = int((ctv / total_emp) * 100) if total_emp > 0 else 0
 
-    # --- TẠO DANH SÁCH TẤT CẢ PHÒNG BAN VÀ CHIA 2 CỘT ---
     dept_html_col1, dept_html_col2 = "", ""
     if 'Phòng ban' in df_active.columns:
-        dept_counts = df_active['Phòng ban'].value_counts() # Đã lấy toàn bộ danh sách
-        colors = ['bg-primary', 'bg-secondary', 'bg-primary-container', 'bg-outline-variant', 'bg-surface-variant', 'bg-surface-container-high']
-        
+        dept_counts = df_active['Phòng ban'].value_counts()
         half_point = (len(dept_counts) + 1) // 2 
-        
+        colors = ['bg-primary', 'bg-secondary', 'bg-primary-container', 'bg-outline-variant', 'bg-surface-variant', 'bg-surface-container-high']
         for i, (dept, count) in enumerate(dept_counts.items()):
             pct = int((count / total_emp) * 100) if total_emp > 0 else 0
-            color = colors[i % 6]
-            block = f'<div class="space-y-1 mb-4"><div class="flex justify-between text-sm font-medium"><span class="truncate w-3/4" title="{dept}">{dept}</span><span class="font-bold">{count}</span></div><div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="h-full {color}" style="width: {pct}%"></div></div></div>'
-            
+            block = f'<div class="space-y-1 mb-4"><div class="flex justify-between text-sm font-medium"><span class="truncate w-3/4" title="{dept}">{dept}</span><span class="font-bold">{count}</span></div><div class="h-2 bg-surface-container rounded-full overflow-hidden"><div class="h-full {colors[i%6]}" style="width: {pct}%"></div></div></div>'
             if i < half_point: dept_html_col1 += block
             else: dept_html_col2 += block
 
@@ -246,19 +261,15 @@ if page == "Executive Dashboard":
             <div class="bg-white border border-outline-variant rounded-xl p-6 text-center shadow-sm hover-card"><span class="material-symbols-outlined text-orange-600 text-3xl mb-2">timer</span><h4 class="font-semibold mb-2">Thử việc</h4><p class="text-3xl font-bold">{pct_thu_viec}%</p><p class="text-xs text-on-surface-variant mt-1">{thu_viec} NV</p></div>
             <div class="bg-white border border-outline-variant rounded-xl p-6 text-center shadow-sm hover-card"><span class="material-symbols-outlined text-gray-500 text-3xl mb-2">handshake</span><h4 class="font-semibold mb-2">CTV</h4><p class="text-3xl font-bold">{pct_ctv}%</p><p class="text-xs text-on-surface-variant mt-1">{ctv} NV</p></div>
         </div>
-        
-        <!-- ĐÃ BỔ SUNG THANH CUỘN CHO PHÒNG BAN -->
-        <div class="bg-white border border-outline-variant rounded-xl p-6 shadow-sm delay-3 animate-fade-in hover-card">
-            <h3 class="text-lg font-bold mb-6">Phân bổ theo Phòng ban</h3>
-            <div class="overflow-y-auto custom-scrollbar pr-3" style="max-height: 280px;">
+        <div class="bg-white border border-outline-variant rounded-xl p-6 shadow-sm delay-3 animate-fade-in"><h3 class="text-lg font-bold mb-6">Phân bổ theo Phòng ban</h3>
+            <div class="overflow-y-auto custom-scrollbar pr-2" style="max-height: 260px;">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div>{dept_html_col1}</div><div>{dept_html_col2}</div></div>
             </div>
         </div>
     </body></html>
     """
-    
-    # --- ĐÃ TĂNG CHIỀU CAO KHUNG ĐỂ KHÔNG BỊ CẮT XÉN NỮA ---
     components.html(html_p1, height=1400, scrolling=True)
+
 
 # ==========================================
 # TRANG 2: WORKFORCE ANALYTICS
@@ -274,11 +285,6 @@ elif page == "Workforce Analytics":
     top_edu = edu_df['Trình độ học vấn'].mode()[0] if not edu_df.empty else "N/A"
     uni_df = df_active[df_active['Tên trường'] != 'Chưa cập nhật']
     top_uni = uni_df['Tên trường'].mode()[0] if not uni_df.empty else "N/A"
-
-    def get_dynamic_font(text):
-        if len(str(text)) <= 15: return "text-3xl"
-        elif len(str(text)) <= 25: return "text-2xl"
-        else: return "text-xl"
 
     lv_html, tn_html = "", ""
     if 'Cấp bậc' in df_active.columns:
@@ -411,11 +417,12 @@ elif page == "Workforce Analytics":
                 tds = f"<td class='p-3 text-sm font-semibold text-[#1b1c1d] border-b border-[#e2e8f0]'>{idx}</td>"
                 for c in cols: tds += f"<td class='p-3 text-center text-sm border-b border-[#e2e8f0] {'font-bold text-[#0045d3] bg-[#dce1ff]/50' if c=='Tổng' else 'text-[#434655]'}'>{row[c] if row[c]>0 else '-'}</td>"
                 tr_str += f"<tr class='{bg}'>{tds}</tr>"
-            matrix_html = f'<table class="w-full text-left border-collapse"><thead><tr><th class="p-3 text-[12px] uppercase text-[#434655] font-bold border-b border-[#e2e8f0] bg-[#f5f3f4]">Phòng ban</th>{th_str}</tr></thead><tbody>{tr_str}</tbody></table>'
+            matrix_html = f'<table class="w-full text-left border-collapse"><thead><tr><th class="p-3 text-[11px] uppercase text-[#434655] font-bold border-b border-[#e2e8f0] bg-[#f5f3f4]">Phòng ban</th>{th_str}</tr></thead><tbody>{tr_str}</tbody></table>'
 
     html_page2 = f"""
     <!DOCTYPE html><html lang="vi"><head>{TAILWIND_HEAD}</head><body class="p-4 md:p-6 max-w-[1500px] mx-auto animate-fade-in">
-        <header class="mb-8"><h1 class="text-3xl font-bold text-[#1b1c1d]">Phân tích Lực lượng Lao động</h1><p class="text-sm text-[#434655] mt-1">Báo cáo chi tiết về cơ cấu, chất lượng và phân bổ nhân sự ({nam_phan_tich}).</p></header>
+        <header class="mb-8"><h1 class="text-3xl font-bold text-[#1b1c1d]">Phân tích Lực lượng Lao động</h1><p class="text-sm text-[#434655] mt-1">Báo cáo chi tiết về cơ cấu, chất lượng và sự phân bổ nhân sự ({nam_phan_tich}).</p></header>
+        
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8 delay-1 animate-fade-in">
             <div class="bg-[#3260ec] p-5 rounded-xl text-white card-shadow"><p class="text-[10px] uppercase font-bold opacity-80 tracking-wider">Tổng nhân sự</p><p class="text-4xl font-extrabold mt-2">{total_emp}</p></div>
             <div class="bg-white border border-[#c4c5d7] p-5 rounded-xl card-shadow flex flex-col justify-between"><p class="text-[10px] uppercase font-bold text-[#747686] tracking-wider">Tuổi trung bình</p><p class="text-4xl font-extrabold text-[#1b1c1d] mt-2">{round(avg_age,1)}</p></div>
@@ -424,27 +431,32 @@ elif page == "Workforce Analytics":
             <div class="bg-white border border-[#c4c5d7] p-5 rounded-xl card-shadow flex flex-col justify-between"><p class="text-[10px] uppercase font-bold text-[#747686] tracking-wider">Số công nghệ</p><p class="text-4xl font-extrabold text-[#1b1c1d] mt-2">{so_cong_nghe}</p></div>
             <div class="bg-white border border-[#c4c5d7] p-5 rounded-xl card-shadow flex flex-col justify-between"><p class="text-[10px] uppercase font-bold text-[#747686] tracking-wider">Số chức danh</p><p class="text-4xl font-extrabold text-[#1b1c1d] mt-2">{so_chuc_danh}</p></div>
         </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 delay-2 animate-fade-in">
             <section class="lg:col-span-4 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Nhân sự theo Khối</h3>{khoi_html}</section>
             <section class="lg:col-span-8 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Nhân sự theo Phòng ban</h3>{pb_html}</section>
         </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 delay-3 animate-fade-in">
-            <<section class="lg:col-span-5 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Cơ cấu Cấp bậc (Level)</h3>{lv_html}</section>
+            <section class="lg:col-span-5 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Cơ cấu Cấp bậc (Level)</h3>{cb_html}</section>
             <section class="lg:col-span-7 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Hệ sinh thái Công nghệ (Word Cloud)</h3><div class="flex flex-wrap gap-4 items-center justify-center h-48">{tech_html}</div></section>
         </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 delay-3 animate-fade-in">
             <div class="bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-sm font-bold text-center mb-6 text-[#1b1c1d]">Giới tính</h3>{gen_html}</div>
             <div class="bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-sm font-bold text-center mb-6 text-[#1b1c1d]">Nhóm Tuổi</h3>{age_html}</div>
             <div class="bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-sm font-bold text-center mb-6 text-[#1b1c1d]">Top Chức danh</h3><div class="custom-scrollbar overflow-y-auto max-h-[160px] pr-2">{cd_html}</div></div>
             <div class="bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow flex flex-col justify-center items-center text-center"><h3 class="text-sm font-bold mb-6 text-[#1b1c1d]">Hôn nhân</h3>{hn_html}</div>
         </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <section class="lg:col-span-8 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow">
                 <h3 class="text-base font-bold text-[#1b1c1d] mb-6">Trình độ & Nguồn đào tạo</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="space-y-4"><p class="text-[11px] font-bold text-[#747686] uppercase">Trình độ Học vấn</p>{edu_html}</div><div class="space-y-3"><p class="text-[11px] font-bold text-[#747686] uppercase">Top Trường</p><ul class="space-y-1">{uni_html}</ul></div></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="space-y-4"><p class="text-[11px] font-bold text-[#747686] uppercase">Trình độ Học vấn</p>{edu_html}</div><div class="space-y-3"><p class="text-[11px] font-bold text-[#747686] uppercase">Top Trường Đại học</p><ul class="space-y-1">{uni_html}</ul></div></div>
             </section>
             <section class="lg:col-span-4 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Thâm niên công tác</h3>{tn_html}</section>
         </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
             <section class="lg:col-span-8 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow">
                 <h3 class="text-base font-bold text-[#1b1c1d] mb-6">Bản đồ Phân bổ Địa lý</h3>
@@ -459,11 +471,11 @@ elif page == "Workforce Analytics":
                 <div class="grid grid-cols-2 gap-4">{ht_html}</div>
             </section>
         </div>
+
         <section class="bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow mb-10"><div class="flex justify-between items-center mb-6"><h3 class="text-base font-bold text-[#1b1c1d]">Ma trận Nhân sự: Phòng ban x Cấp bậc</h3></div><div class="overflow-x-auto custom-scrollbar">{matrix_html}</div></section>
     </body></html>
     """
     components.html(html_page2, height=2100, scrolling=True)
-
 
 # ==========================================
 # TRANG 3: INTERN ANALYTICS
@@ -541,6 +553,7 @@ elif page == "Intern Analytics":
         <header class="mb-8 flex flex-col md:flex-row justify-between items-end gap-4 border-b border-[#e2e8f0] pb-6">
             <div><h1 class="text-3xl font-bold text-[#1b1c1d] uppercase tracking-tight">Intern Analytics Report</h1><p class="text-sm text-[#434655] mt-1">Hệ thống báo cáo phân tích toàn diện chiến lược thực tập sinh doanh nghiệp ({nam_phan_tich})</p></div>
         </header>
+
         <section class="space-y-6 mb-8 animate-fade-in delay-1">
             <h3 class="text-xl font-bold text-[#0045d3] flex items-center gap-2"><span class="material-symbols-outlined">grid_view</span> I. Program Overview</h3>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -551,6 +564,7 @@ elif page == "Intern Analytics":
                 <div class="bg-white p-5 rounded-xl border border-[#c4c5d7] card-shadow"><span class="text-[10px] text-[#ba1a1a] uppercase font-bold">Early Leave</span><div class="mt-2"><span class="text-3xl font-bold text-[#ba1a1a]">{early_leave}</span></div></div>
             </div>
         </section>
+
         <section class="space-y-6 mb-8 animate-fade-in delay-2">
             <h3 class="text-xl font-bold text-[#0045d3] flex items-center gap-2"><span class="material-symbols-outlined">analytics</span> II. Intern Structure</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -558,6 +572,7 @@ elif page == "Intern Analytics":
                 <div class="bg-white p-6 rounded-xl border border-[#c4c5d7] card-shadow"><h4 class="font-bold text-sm mb-6 text-[#1b1c1d]">Distribution by Team</h4><div class="grid grid-cols-2 grid-rows-2 gap-2 h-40">{team_int_html}</div></div>
                 <div class="bg-white p-6 rounded-xl border border-[#c4c5d7] card-shadow"><h4 class="font-bold text-sm mb-6 text-[#1b1c1d]">Distribution by Major</h4>{major_html}</div>
             </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white p-6 rounded-xl border border-[#c4c5d7] card-shadow"><h4 class="font-bold text-sm mb-6 text-[#1b1c1d]">Top Universities</h4><div class="space-y-2">{uni_int_html}</div></div>
                 <div class="bg-white p-6 rounded-xl border border-[#c4c5d7] card-shadow flex flex-col justify-center items-center"><h4 class="font-bold text-sm mb-6 text-[#1b1c1d] w-full text-left">Gender Distribution</h4>
@@ -567,16 +582,26 @@ elif page == "Intern Analytics":
                 <div class="bg-white p-6 rounded-xl border border-[#c4c5d7] card-shadow"><h4 class="font-bold text-sm mb-6 text-[#1b1c1d]">Age Distribution</h4><div class="h-32 flex items-end gap-4 justify-center border-b border-[#efedee]">{age_int_html}</div></div>
             </div>
         </section>
+
         <section class="space-y-6 animate-fade-in delay-3">
             <h3 class="text-xl font-bold text-[#0045d3] flex items-center gap-2"><span class="material-symbols-outlined">assignment_ind</span> III. Insights & Alerts</h3>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div class="lg:col-span-8 bg-white p-6 rounded-xl border border-[#c4c5d7] card-shadow">
                     <h4 class="font-bold text-sm mb-6 text-[#1b1c1d]">Top Universities by Conversion Quality</h4>
-                    <div class="overflow-x-auto"><table class="w-full text-left text-[11px]"><thead class="bg-[#f5f3f4]"><tr><th class="p-3 uppercase text-[#434655]">University</th><th class="p-3 uppercase text-[#434655]">Total Interns</th><th class="p-3 uppercase text-[#434655]">Avg Score</th><th class="p-3 uppercase text-[#434655]">Quality Rank</th></tr></thead><tbody class="divide-y divide-[#e2e8f0]"><tr><td class="p-3 font-bold text-[#1b1c1d]">HUST</td><td class="p-3">45</td><td class="p-3">4.8</td><td class="p-3 text-[#0045d3] font-bold">Elite</td></tr><tr><td class="p-3 font-bold text-[#1b1c1d]">PTIT</td><td class="p-3">18</td><td class="p-3">4.6</td><td class="p-3 text-[#335bae] font-bold">High</td></tr><tr><td class="p-3 font-bold text-[#1b1c1d]">FTU</td><td class="p-3">28</td><td class="p-3">4.3</td><td class="p-3 text-[#747686] font-bold">Medium</td></tr></tbody></table></div>
+                    <div class="overflow-x-auto"><table class="w-full text-left text-[11px]">
+                        <thead class="bg-[#f5f3f4]"><tr><th class="p-3 uppercase text-[#434655]">University</th><th class="p-3 uppercase text-[#434655]">Total Interns</th><th class="p-3 uppercase text-[#434655]">Avg Score</th><th class="p-3 uppercase text-[#434655]">Quality Rank</th></tr></thead>
+                        <tbody class="divide-y divide-[#e2e8f0]">
+                            <tr><td class="p-3 font-bold text-[#1b1c1d]">HUST</td><td class="p-3">45</td><td class="p-3">4.8</td><td class="p-3 text-[#0045d3] font-bold">Elite</td></tr>
+                            <tr><td class="p-3 font-bold text-[#1b1c1d]">PTIT</td><td class="p-3">18</td><td class="p-3">4.6</td><td class="p-3 text-[#335bae] font-bold">High</td></tr>
+                            <tr><td class="p-3 font-bold text-[#1b1c1d]">FTU</td><td class="p-3">28</td><td class="p-3">4.3</td><td class="p-3 text-[#747686] font-bold">Medium</td></tr>
+                        </tbody>
+                    </table></div>
                 </div>
                 <div class="lg:col-span-4 bg-[#ffdad6]/20 p-6 rounded-xl border border-[#ba1a1a]/20 card-shadow">
                     <h4 class="font-bold text-sm mb-6 text-[#ba1a1a] flex items-center gap-2"><span class="material-symbols-outlined">report_problem</span> High-Risk Areas</h4>
-                    <div class="space-y-4"><div class="p-3 bg-white rounded border border-[#ba1a1a]/20 flex items-start gap-3"><div class="w-8 h-8 rounded-full bg-[#ba1a1a]/10 flex items-center justify-center text-[#ba1a1a] shrink-0"><span class="material-symbols-outlined text-sm">logout</span></div><div><div class="font-bold text-[11px] text-[#ba1a1a]">QA Early Leave Spike</div><p class="text-[10px] text-[#434655] mt-1">Tỷ lệ nghỉ sớm tại phòng QA tăng mạnh.</p></div></div></div>
+                    <div class="space-y-4">
+                        <div class="p-3 bg-white rounded border border-[#ba1a1a]/20 flex items-start gap-3"><div class="w-8 h-8 rounded-full bg-[#ba1a1a]/10 flex items-center justify-center text-[#ba1a1a] shrink-0"><span class="material-symbols-outlined text-sm">logout</span></div><div><div class="font-bold text-[11px] text-[#ba1a1a]">QA Early Leave Spike</div><p class="text-[10px] text-[#434655] mt-1">Tỷ lệ nghỉ sớm tại phòng QA tăng mạnh.</p></div></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -662,7 +687,7 @@ elif page == "Attrition & Recruitment":
             reason_terms = df_terms[df_terms['Lý do nghỉ việc']!='Chưa cập nhật']['Lý do nghỉ việc'].value_counts().reset_index()
             reason_terms.columns = ['Lý do', 'Số lượng']
             reason_terms['Lý do (Ngắn)'] = reason_terms['Lý do'].apply(lambda x: str(x)[:30] + '...' if len(str(x)) > 30 else str(x))
-            fig_t2 = px.pie(reason_terms, names='Lý do (Ngắn)', values='Số lượng', custom_data=['Lý do'], hole=0.5, color_discrete_sequence=['#ba1a1a', '#e11d48', '#ffb596', '#ffdad6', '#c4c5d7'])
+            fig_t2 = px.pie(reason_terms, names='Lý do (Ngắn)', values='Số lượng', custom_data=['Lý do'], hole=0.5, color_discrete_sequence=['#174597', '#3260ec', '#82a6fe', '#dce1ff', '#c4c5d7'])
             fig_t2.update_traces(textposition='inside', textinfo='percent', hovertemplate="<b>%{customdata[0]}</b><br>Số lượng: %{value}<extra></extra>")
             fig_t2.update_layout(showlegend=True, margin=dict(t=10, b=10, l=0, r=0), legend=dict(title="", orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.0, font=dict(size=11, color="#434655"), itemwidth=30))
             chart_wrapper(f"Lý do nghỉ việc", fig_t2, height=250)
