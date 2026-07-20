@@ -258,7 +258,7 @@ if page == "Executive Dashboard":
     """
     
     # --- ĐÃ TĂNG CHIỀU CAO KHUNG ĐỂ KHÔNG BỊ CẮT XÉN NỮA ---
-    components.html(html_p1, height=1250, scrolling=True)
+    components.html(html_p1, height=1400, scrolling=True)
 
 # ==========================================
 # TRANG 2: WORKFORCE ANALYTICS
