@@ -108,6 +108,8 @@ def load_data():
     df[obj_cols] = df[obj_cols].fillna('Chưa cập nhật')
     return df
 
+
+
 df = load_data()
 
 # ==========================================
@@ -159,6 +161,7 @@ df_terms = df_base[nam_nghi_base == nam_phan_tich]
 hires_count = len(df_hires)
 terms_count = len(df_terms)
 net_change = hires_count - terms_count
+
 
 is_intern_ctv = (
     df_base['Cấp bậc'].astype(str).str.lower().str.contains('intern|thực tập|sinh viên', na=False) | 
