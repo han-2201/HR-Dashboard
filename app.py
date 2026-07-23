@@ -435,7 +435,7 @@ elif page == "Workforce Analytics":
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 delay-3 animate-fade-in">
-            <section class="lg:col-span-5 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Cơ cấu Cấp bậc (Level)</h3>{cb_html}</section>
+            <section class="lg:col-span-5 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Cơ cấu Cấp bậc (Level)</h3>{lv_html}</section>
             <section class="lg:col-span-7 bg-white border border-[#c4c5d7] p-6 rounded-xl card-shadow"><h3 class="text-base font-bold text-[#1b1c1d] mb-6">Hệ sinh thái Công nghệ (Word Cloud)</h3><div class="flex flex-wrap gap-4 items-center justify-center h-48">{tech_html}</div></section>
         </div>
 
